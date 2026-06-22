@@ -2,27 +2,20 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/wait.h>
+#include "shell.h"
 
 /**
  * main - This is a UNIX command line interpreter
- * @argc: number of arguments to the main(not the interpreter)
- * @argv: pointer to the array of the arguments
- * @envp: pointer to the environment variables
  *
  * Return: returns 0 when interrupted after successfully running
  */
 int main(void)
 {
+	char *lineptr = NULL;
 	pid_t pid;
 	ssize_t getl;
-	int n;
 	int status;
-	char *lineptr = NULL;
 	size_t len = 0;
-	char *shenv[] = {
-		"PATH=/usr/bin:/bin:/usr/local/bin",
-		NULL
-	};
 
 	while (1)
 	{
@@ -49,19 +42,7 @@ int main(void)
 			}
 			if (getl > 0)
 				lineptr[getl - 1] = '\0';
-
-			char *const shargv[] = {
-				lineptr,
-				NULL
-			};
-
-			n = execve(lineptr, shargv, shenv);
-			if (n == -1)
-			{
-				free(lineptr);
-				perror("simple_shell: execve");
-				_exit(EXIT_FAILURE);
-			}
+			exec_program(lineptr);
 		}
 		if (pid > 0)
 		{
@@ -70,4 +51,31 @@ int main(void)
 	}
 	free(lineptr);
 	return (0);
+}
+
+
+
+/**
+ * exec_program - execute commands
+ * @lineptr: pointer to the command to execute
+ */
+void exec_program(char *lineptr)
+{
+	int n;
+	char *shargv[2];
+	char *shenv[] = {
+		"PATH=/usr/bin:/bin:/usr/local/bin",
+		NULL
+	};
+
+	shargv[0] = lineptr;
+	shargv[1] = NULL;
+
+	n = execve(lineptr, shargv, shenv);
+	if (n == -1)
+	{
+		free(lineptr);
+		perror("simple_shell: execve");
+		_exit(EXIT_FAILURE);
+	};
 }
